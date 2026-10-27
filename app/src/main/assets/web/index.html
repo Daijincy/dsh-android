@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>DSH Android</title>
+<style>
+:root{
+  --bg:#0F1115; --panel:#161B22; --panel2:#1C2230; --line:#262C38;
+  --text:#E8EDF4; --muted:#8A93A6; --accent:#1B6FFF; --accent2:#4C8CFF;
+  --tool:#1F2A44; --ok:#2EBD6B; --run:#E3B341; --err:#F0604E;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;font-size:15px;overflow:hidden}
+#app{display:flex;height:100%;flex-direction:column}
+/* top bar */
+#topbar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+#burger{background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;padding:4px}
+#brand{font-weight:700;font-size:16px;letter-spacing:.5px}
+#brand small{color:var(--muted);font-weight:400;font-size:12px;margin-left:6px}
+#status{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);background:var(--panel2);padding:4px 10px;border-radius:20px;border:1px solid var(--line)}
+#status .dot{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+#status .dot.demo{background:var(--run)}
+/* drawer */
+#drawer{position:fixed;top:0;left:0;bottom:0;width:260px;background:var(--panel);border-right:1px solid var(--line);transform:translateX(-100%);transition:transform .2s;z-index:50;padding-top:14px;overflow-y:auto}
+#drawer.open{transform:none}
+#drawer .sec{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:12px 16px 6px}
+#drawer button.nav{display:flex;width:calc(100% - 12px);margin:2px 6px;align-items:center;gap:10px;background:none;border:none;color:var(--text);padding:10px 12px;border-radius:8px;text-align:left;cursor:pointer;font-size:14px}
+#drawer button.nav.active{background:var(--accent);color:#fff}
+#drawer button.nav .n{width:16px;text-align:center}
+#scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:40;display:none}
+#scrim.on{display:block}
+/* sessions list inside drawer */
+#sessList{margin:4px 6px}
+#sessList .sess{padding:8px 12px;border-radius:8px;font-size:13px;color:var(--text);cursor:pointer;display:flex;justify-content:space-between;gap:8px}
+#sessList .sess.active{background:var(--panel2);border:1px solid var(--line)}
+#sessList .sess .x{color:var(--muted);border:none;background:none;cursor:pointer}
+/* main area */
+#main{flex:1;display:flex;flex-direction:column;min-height:0;position:relative}
+.view{display:none;flex:1;flex-direction:column;min-height:0}
+.view.active{display:flex}
+/* chat */
+#chat{flex:1;overflow-y:auto;padding:16px;scroll-behavior:smooth}
+.msg{max-width:92%;padding:10px 14px;border-radius:12px;margin-bottom:10px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.msg.user{align-self:flex-end;margin-left:auto;background:var(--accent);color:#fff;border-bottom-right-radius:4px}
+.msg.assistant{background:var(--panel2);border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg .toolbar{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 9px;border-radius:6px;background:var(--tool);color:#B9C8E8;border:1px solid #26344F}
+.chip .st{width:6px;height:6px;border-radius:50%}
+.chip.done .st{background:var(--ok)}
+.chip.run .st{background:var(--run);animation:pulse 1s infinite}
+.chip.err .st{background:var(--err)}
+@keyframes pulse{50%{opacity:.3}}
+.caret{display:inline-block;width:7px;background:var(--accent2);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+/* input */
+#inputbar{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line);background:var(--panel)}
+#input{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:10px 12px;font-size:15px;outline:none;min-height:44px;resize:none}
+#send{background:var(--accent);border:none;color:#fff;border-radius:10px;width:48px;font-size:18px;cursor:pointer}
+#send:disabled{opacity:.4}
+/* generic panels */
+.panel{flex:1;overflow-y:auto;padding:16px}
+.panel h2{font-size:15px;margin-bottom:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px}
+.card .t{font-weight:600;margin-bottom:4px}
+.card .d{color:var(--muted);font-size:13px;line-height:1.5}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;margin-left:6px;vertical-align:middle}
+.badge.on{background:rgba(46,189,107,.15);color:var(--ok)}
+.badge.off{background:rgba(96,94,92,.15);color:var(--muted)}
+.kv{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.kv:last-child{border-bottom:none}
+.kv .k{color:var(--muted)}
+#empty{color:var(--muted);text-align:center;margin-top:40%;font-size:14px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <button id="burger">☰</button>
+    <div id="brand">DSH<small>Android · v0.1.0</small></div>
+    <div id="status"><span class="dot demo"></span><span id="statusText">demo</span></div>
+  </div>
+
+  <div id="scrim"></div>
+  <nav id="drawer">
+    <div class="sec">会话</div>
+    <div id="sessList"></div>
+    <div class="sec">导航</div>
+    <button class="nav active" data-view="chat"><span class="n">💬</span>对话</button>
+    <button class="nav" data-view="plugins"><span class="n">🧩</span>插件</button>
+    <button class="nav" data-view="agents"><span class="n">🤖</span>Agent</button>
+    <button class="nav" data-view="settings"><span class="n">⚙</span>设置</button>
+  </nav>
+
+  <div id="main">
+    <div id="view-chat" class="view active">
+      <div id="chat"><div id="empty">开始一段对话，Agent 会在设备端执行任务</div></div>
+      <div id="inputbar">
+        <textarea id="input" placeholder="输入消息，例如：帮我查一下今天的天气并设置提醒"></textarea>
+        <button id="send">➤</button>
+      </div>
+    </div>
+
+    <div id="view-plugins" class="view panel"><h2>插件</h2><div id="pluginCards"></div></div>
+    <div id="view-agents" class="view panel"><h2>Agent</h2><div id="agentCards"></div></div>
+    <div id="view-settings" class="view panel"><h2>设置</h2><div id="settingsCards"></div></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+// ---------- state ----------
+var state = {
+  view: 'chat',
+  sessions: [{id:1,name:'新会话',active:true}],
+  active: 1,
+  busy: false
+};
+
+// ---------- native bridge ----------
+var native = (typeof window.DSHNative !== 'undefined') ? window.DSHNative : null;
+function deviceInfo(){
+  try { return native ? JSON.parse(native.getDeviceInfo()) : null; } catch(e){ return null; }
+}
+function engineStatus(){
+  try { return native ? JSON.parse(native.getEngineStatus()) : {mode:'demo'}; } catch(e){ return {mode:'demo'}; }
+}
+
+// ---------- render ----------
+var chatEl = document.getElementById('chat');
+var emptyEl = document.getElementById('empty');
+function el(cls,html){ var d=document.createElement('div'); d.className=cls; d.innerHTML=html; return d; }
+function addMsg(role,text){ emptyEl.style.display='none'; var m=el('msg '+role, escapeHtml(text)); chatEl.appendChild(m); chatEl.scrollTop=chatEl.scrollHeight; return m; }
+function chipEl(name,status){
+  var c=el('chip '+status,'<span class="st"></span>'+escapeHtml(name));
+  return c;
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+function renderSessions(){
+  var list=document.getElementById('sessList'); list.innerHTML='';
+  state.sessions.forEach(function(s){
+    var d=el('sess'+(s.active?' active':''), escapeHtml(s.name)+'<button class="x" data-id="'+s.id+'">✕</button>');
+    d.onclick=function(){ state.active=s.id; refresh(); };
+    list.appendChild(d);
+  });
+}
+function renderStatus(){
+  var st=engineStatus(); var dot=document.querySelector('#status .dot');
+  dot.className='dot '+(st.mode||'demo'); document.getElementById('statusText').textContent=st.mode||'demo';
+}
+function renderPlugins(){
+  var host=document.getElementById('pluginCards');
+  var plugins=[
+    {n:'Cordis 插件内核',d:'一切皆插件：注册/依赖/生命周期。设备端由 Node 运行时承载。',on:true},
+    {n:'LLM 路由',d:'对接 DeepSeek / OpenAI 兼容接口，多模型切换与重试。',on:true},
+    {n:'MCP 客户端',d:'调用原生能力桥（剪贴板/通知/定位等）与第三方 MCP Server。',on:true},
+    {n:'技能 Skills',d:'SKILL.md 技能解析与调用链路。',on:true},
+    {n:'浏览器 Browser',d:'应用内网页自动化（P1 接入设备端浏览器）。',on:false},
+    {n:'终端 Shell',d:'设备端 Linux 终端执行（iSH/PRoot，P1）。',on:false}
+  ];
+  host.innerHTML='';
+  plugins.forEach(function(p){
+    var c=el('card','<div class="t">'+escapeHtml(p.n)+'<span class="badge '+(p.on?'on':'off')+'">'+(p.on?'可用':'待接入')+'</span></div><div class="d">'+escapeHtml(p.d)+'</div>');
+    host.appendChild(c);
+  });
+}
+function renderAgents(){
+  var host=document.getElementById('agentCards');
+  var agents=[
+    {n:'主 Agent（ReactLoop）',d:'事件溯源主循环：流式 LLM → 工具执行 → 结果回写。',on:true},
+    {n:'子 Agent（subagent）',d:'委托子任务、并行推理。',on:true},
+    {n:'调度 Schedule',d:'定时与周期性任务（设备端 AlarmManager 兜底）。',on:false},
+    {n:'人审 Approval',d:'危险操作人工确认弹窗。',on:false}
+  ];
+  host.innerHTML='';
+  agents.forEach(function(a){
+    var c=el('card','<div class="t">'+escapeHtml(a.n)+'<span class="badge '+(a.on?'on':'off')+'">'+(a.on?'可用':'待接入')+'</span></div><div class="d">'+escapeHtml(a.d)+'</div>');
+    host.appendChild(c);
+  });
+}
+function renderSettings(){
+  var host=document.getElementById('settingsCards'); var d=deviceInfo(); var st=engineStatus();
+  host.innerHTML='';
+  var c=el('card','<div class="t">引擎</div>');
+  var kv=[['模式',st.mode],['引擎版本',st.engine||'—'],['Node 运行时',st.nodeReady?'就绪':'待接入(P1)']];
+  kv.forEach(function(x){ var r=el('kv','<span class="k">'+x[0]+'</span><span>'+escapeHtml(String(x[1]))+'</span>'); c.appendChild(r); });
+  host.appendChild(c);
+  if(d){ var c2=el('card','<div class="t">设备</div>');
+    [['品牌',d.brand],['型号',d.model],['Android SDK',String(d.sdk)]].forEach(function(x){ var r=el('kv','<span class="k">'+x[0]+'</span><span>'+escapeHtml(String(x[1]))+'</span>'); c2.appendChild(r); });
+    host.appendChild(c2);
+  }
+  var c3=el('card','<div class="t">说明</div><div class="d">本版为 v1：UI 复刻 + 引擎通道架构 + 原生能力桥。完整设备端 @deepseek-ai/dsh 引擎（Node 运行时、浏览器、终端、原生能力 MCP）在 P1 迭代接入。</div>');
+  host.appendChild(c3);
+}
+
+function refresh(){
+  renderSessions(); renderStatus(); renderPlugins(); renderAgents(); renderSettings();
+  document.querySelectorAll('#drawer button.nav').forEach(function(b){ b.classList.toggle('active', b.dataset.view===state.view); });
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.toggle('active', v.id==='view-'+state.view); });
+}
+
+// ---------- demo engine (UI-verifiable, replaced by real DSH host in P1) ----------
+function typeText(m,text){
+  var i=0; function step(){
+    if(i>text.length){ return; }
+    m.textContent=text.slice(0,i++)+'\u200b';
+    var caret=document.createElement('span'); caret.className='caret'; caret.textContent='';
+    m.appendChild(caret); caret.remove();
+    chatEl.scrollTop=chatEl.scrollHeight;
+    if(i<=text.length) setTimeout(step,14);
+  }
+  step();
+}
+function runDemo(text){
+  var asst=addMsg('assistant','');
+  var toolbar=el('toolbar',''); asst.appendChild(toolbar);
+  var steps=[
+    {name:'tool::web_search',ms:700},
+    {name:'tool::mcp::native.clipboard',ms:500},
+    {name:'tool::subagent::plan',ms:900}
+  ];
+  var done=[];
+  function showStep(k){
+    if(k>=steps.length){
+      var reply='已处理「'+text+'」。\n\n我检索了相关信息，并把结果整理好了。这个版本的 Agent 由 demo 引擎驱动（用于验证 UI 与工具调用流式渲染），接入完整设备端 DSH 引擎后，将在这里展示真实的工具执行过程。';
+      typeText(asst,reply);
+      return;
+    }
+    var c=chipEl(steps[k].name,'run'); toolbar.appendChild(c);
+    setTimeout(function(){
+      c.className='chip done'; done.push(c);
+      if(done.length===1){ var r=chipEl('tool::write_file','run'); toolbar.appendChild(r);
+        setTimeout(function(){ r.className='chip done'; showStep(k+1); },500);
+      } else { showStep(k+1); }
+    }, steps[k].ms);
+  }
+  showStep(0);
+}
+
+// ---------- events ----------
+document.getElementById('burger').onclick=function(){ document.getElementById('drawer').classList.add('open'); document.getElementById('scrim').classList.add('on'); };
+document.getElementById('scrim').onclick=function(){ document.getElementById('drawer').classList.remove('open'); this.classList.remove('on'); };
+document.querySelectorAll('#drawer button.nav').forEach(function(b){ b.onclick=function(){ state.view=b.dataset.view; document.getElementById('drawer').classList.remove('open'); document.getElementById('scrim').classList.remove('on'); refresh(); }; });
+document.getElementById('send').onclick=send;
+var input=document.getElementById('input');
+input.addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); } });
+function send(){
+  var v=input.value.trim(); if(!v||state.busy) return;
+  state.busy=true; document.getElementById('send').disabled=true;
+  addMsg('user',v); input.value=''; refreshSessionsActive();
+  setTimeout(function(){ runDemo(v); state.busy=false; document.getElementById('send').disabled=false; },80);
+}
+function refreshSessionsActive(){
+  state.sessions.forEach(function(s){ s.active=(s.id===state.active); });
+  renderSessions();
+}
+
+refresh();
+</script>
+</body>
+</html>

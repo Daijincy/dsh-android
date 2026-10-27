@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.DSHMobile" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:statusBarColor">#0F1115</item>
+        <item name="android:navigationBarColor">#0F1115</item>
+        <item name="android:windowBackground">#0F1115</item>
+        <item name="colorPrimary">#1B6FFF</item>
+    </style>
+</resources>
