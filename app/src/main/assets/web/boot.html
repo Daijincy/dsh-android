@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>连接 DSH</title>
+<style>
+:root{--bg:#0F1115;--panel:#161B22;--panel2:#1C2230;--line:#262C38;--text:#E8EDF4;--muted:#8A93A6;--accent:#1B6FFF}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;font-size:15px;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:28px 20px}
+.logo{font-size:26px;font-weight:800;letter-spacing:.5px;margin-bottom:4px}
+.logo span{color:var(--accent)}
+.sub{color:var(--muted);font-size:13px;margin-bottom:26px}
+.card{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+label{display:block;font-size:12px;color:var(--muted);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.5px}
+input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:12px;font-size:14px;outline:none}
+input:focus{border-color:var(--accent)}
+.btn{width:100%;background:var(--accent);border:none;color:#fff;border-radius:10px;padding:13px;font-size:15px;font-weight:600;margin-top:18px;cursor:pointer}
+.hint{color:var(--muted);font-size:12px;line-height:1.6;margin-top:14px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px}
+.hint code{color:#7FD1FF;font-size:11px}
+.hint .cmds{background:#0F1115;border-radius:8px;padding:8px 10px;margin-top:8px;font-size:11px;color:#C9D6EA;word-break:break-all}
+#dev{color:var(--muted);font-size:11px;margin-top:18px}
+</style>
+</head>
+<body>
+  <div class="logo">DSH <span>Android</span></div>
+  <div class="sub">连接你的 DeepSeek Harness 主机 · 原版界面</div>
+
+  <div class="card">
+    <label>主机地址（含 ?token=）</label>
+    <input id="host" type="text" placeholder="http://192.168.1.5:8899/?token=xxxxxxxx">
+    <button class="btn" id="go">连接主机</button>
+
+    <div class="hint">
+      在你的电脑/服务器上启动 DSH 主机，把打印出的完整地址填到上面：
+      <div class="cmds">npm i -g @deepseek-ai/dsh<br>dsh --profile web --no-open</div>
+      手机与主机需在同一网络。连接后即为官方原版界面与真实引擎功能。
+    </div>
+  </div>
+
+  <div id="dev"></div>
+
+<script>
+var native = (typeof window.DSHNative !== 'undefined') ? window.DSHNative : null;
+if (native) {
+  try {
+    var d = JSON.parse(native.getDeviceInfo());
+    document.getElementById('dev').textContent = '设备：' + d.brand + ' ' + d.model + ' · Android ' + d.sdk;
+  } catch(e){}
+}
+document.getElementById('go').onclick = function(){
+  var url = document.getElementById('host').value.trim();
+  if (!url) { alert('请填写主机地址'); return; }
+  if (!/^https?:\/\//i.test(url)) url = 'http://' + url;
+  native.connect(url);
+};
+document.getElementById('host').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('go').click(); });
+</script>
+</body>
+</html>
