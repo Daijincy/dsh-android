@@ -18,13 +18,15 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install SDK packages
+      # GitHub's ubuntu-latest runner ships an Android SDK under $ANDROID_HOME.
+      # Accept licenses so AGP can auto-install any missing platform/build-tools.
+      - name: Accept Android licenses
         run: |
-          sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools" >/dev/null
-          yes | sdkmanager --licenses >/dev/null || true
+          SDK="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          echo "ANDROID_HOME=$SDK"
+          mkdir -p "$SDK/licenses"
+          printf "android-sdk-license-5be876d5\nandroid-sdk-license-519dc5241b58d497c0b49d90a98e9b417fe1e2e\n" > "$SDK/licenses/android-sdk-license"
+          printf "android-sdk-preview-license-8481541298\n" > "$SDK/licenses/android-sdk-preview-license"
 
       - name: Provision Gradle
         uses: gradle/actions/setup-gradle@v4
